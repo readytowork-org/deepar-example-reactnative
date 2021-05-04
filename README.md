@@ -1,6 +1,6 @@
 # React Native DeepAR SDK example
 
-[This example is outdated since it uses the older DeepAR SDK and it does not run out of the box. We've kept it here as a reference how one could use RN native components to integrate DeepAR. We accept pull-requests for updating to latest DeepAR version.]
+**[This example is outdated since it uses the older DeepAR SDK and it does not run out of the box. We've kept it here as a reference how one could use RN native components to integrate DeepAR. We accept pull-requests for updating to latest DeepAR version.]**
 
 To run the example
 * In the root folder:
