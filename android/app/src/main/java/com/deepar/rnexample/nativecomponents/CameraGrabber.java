@@ -15,6 +15,7 @@ import java.util.List;
 
 import ai.deepar.ar.CameraResolutionPreset;
 import ai.deepar.ar.DeepAR;
+import ai.deepar.ar.DeepARImageFormat;
 
 
 /**
@@ -23,11 +24,10 @@ import ai.deepar.ar.DeepAR;
  * to use it as is, or modify for your own needs.
  */
 
-public class CameraGrabber
-{
+public class CameraGrabber {
     private static final String TAG = CameraGrabber.class.getSimpleName();
 
-    private static final int NUMBER_OF_BUFFERS=2;
+    private static final int NUMBER_OF_BUFFERS = 2;
 
     private static int currentCameraDevice = Camera.CameraInfo.CAMERA_FACING_FRONT;
 
@@ -36,6 +36,7 @@ public class CameraGrabber
     private CameraResolutionPreset resolutionPreset = CameraResolutionPreset.P640x480;
 
     private int screenOrientation = 0;
+    private CameraHandlerThread mThread = null;
 
     public CameraGrabber() {
     }
@@ -62,7 +63,6 @@ public class CameraGrabber
         }
     }
 
-
     public void startPreview() {
         if (mThread != null && mThread.camera != null) {
             mThread.camera.startPreview();
@@ -70,7 +70,7 @@ public class CameraGrabber
     }
 
     public void stopPreview() {
-        if (mThread != null && mThread.camera != null ) {
+        if (mThread != null && mThread.camera != null) {
             mThread.camera.stopPreview();
         }
     }
@@ -103,8 +103,6 @@ public class CameraGrabber
         }
     }
 
-    private CameraHandlerThread mThread = null;
-
     public CameraResolutionPreset getResolutionPreset() {
         return resolutionPreset;
     }
@@ -114,11 +112,14 @@ public class CameraGrabber
         this.resolutionPreset = resolutionPreset;
 
         if (this.resolutionPreset == CameraResolutionPreset.P640x480) {
-            width = 640; height = 480;
+            width = 640;
+            height = 480;
         } else if (this.resolutionPreset == CameraResolutionPreset.P1280x720) {
-            width = 1280; height = 720;
+            width = 1280;
+            height = 720;
         } else if (this.resolutionPreset == CameraResolutionPreset.P640x360) {
-            width = 640; height = 360;
+            width = 640;
+            height = 360;
         }
 
         if (mThread != null) {
@@ -134,6 +135,7 @@ public class CameraGrabber
     public void setScreenOrientation(int screenOrientation) {
         this.screenOrientation = screenOrientation;
     }
+
     public Camera getCamera() {
         if (mThread == null) {
             return null;
@@ -170,17 +172,18 @@ public class CameraGrabber
     }
 
     private static class CameraHandlerThread extends HandlerThread {
-        Handler mHandler = null;
+        private final int screenOrientation;
         public Camera camera;
         public SurfaceTexture surface;
+        Handler mHandler = null;
         private DeepAR frameReceiver;
         private ByteBuffer[] buffers;
         private int currentBuffer = 0;
         private CameraGrabberListener listener;
         private int cameraOrientation;
         private int width;
-        private  int height;
-        private  int screenOrientation;
+        private int height;
+
         CameraHandlerThread(CameraGrabberListener listener, int width, int height, int screenOrientation) {
             super("CameraHandlerThread");
 
@@ -231,9 +234,15 @@ public class CameraGrabber
                                 buffers[currentBuffer].put(data);
                                 buffers[currentBuffer].position(0);
                                 if (frameReceiver != null) {
-                                    frameReceiver.receiveFrame(buffers[currentBuffer], width,height, cameraOrientation, cameraDevice == Camera.CameraInfo.CAMERA_FACING_FRONT);
+                                    frameReceiver.receiveFrame(buffers[currentBuffer],
+                                            width,
+                                            height,
+                                            cameraOrientation,
+                                            cameraDevice == Camera.CameraInfo.CAMERA_FACING_FRONT,
+                                            DeepARImageFormat.YUV_NV21,
+                                            0);
                                 }
-                                currentBuffer = ( currentBuffer + 1 ) % NUMBER_OF_BUFFERS;
+                                currentBuffer = (currentBuffer + 1) % NUMBER_OF_BUFFERS;
                             }
                             if (camera != null) {
                                 camera.addCallbackBuffer(data);
@@ -244,7 +253,7 @@ public class CameraGrabber
             });
         }
 
-        private void init()  {
+        private void init() {
 
             if (camera != null) {
                 camera.setPreviewCallbackWithBuffer(null);
@@ -260,10 +269,9 @@ public class CameraGrabber
             Camera.CameraInfo info = new Camera.CameraInfo();
             int cameraId = -1;
             int numberOfCameras = Camera.getNumberOfCameras();
-            for(int i = 0; i < numberOfCameras; i++)
-            {
+            for (int i = 0; i < numberOfCameras; i++) {
                 Camera.getCameraInfo(i, info);
-                if(info.facing == currentCameraDevice) {
+                if (info.facing == currentCameraDevice) {
                     cameraOrientation = info.orientation;
 
                     if (currentCameraDevice == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -277,7 +285,7 @@ public class CameraGrabber
                 }
             }
 
-            if(cameraId == -1) {
+            if (cameraId == -1) {
                 if (listener != null) {
                     listener.onCameraError("Camera not found error.");
                 }
@@ -332,7 +340,7 @@ public class CameraGrabber
             if (params.getSupportedFocusModes().contains(
                     Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                 params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-            } else if(params.getSupportedFocusModes().contains(
+            } else if (params.getSupportedFocusModes().contains(
                     Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
                 params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
             }
@@ -365,7 +373,7 @@ public class CameraGrabber
 
             try {
                 camera.setPreviewTexture(surface);
-            } catch(IOException ioe)  {
+            } catch (IOException ioe) {
                 if (listener != null) {
                     listener.onCameraError("Error setting preview texture.");
                 }
@@ -405,8 +413,7 @@ public class CameraGrabber
             });
             try {
                 wait();
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 Log.w(TAG, "wait was interrupted");
             }
         }
@@ -416,4 +423,4 @@ public class CameraGrabber
         }
     }
 
-};
+}

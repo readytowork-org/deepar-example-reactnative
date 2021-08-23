@@ -7,6 +7,7 @@ import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.media.Image;
 import android.os.Environment;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
@@ -27,8 +28,10 @@ import com.facebook.react.uimanager.events.RCTEventEmitter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 
+import ai.deepar.ar.ARErrorType;
 import ai.deepar.ar.AREventListener;
 import ai.deepar.ar.CameraResolutionPreset;
 import ai.deepar.ar.DeepAR;
@@ -72,7 +75,7 @@ public class RNTDeepAR extends FrameLayout implements AREventListener, SurfaceHo
         addView(view);
 
         deepAr = new DeepAR(getContext());
-        deepAr.setLicenseKey("your_licence_key_here");
+        deepAr.setLicenseKey("41c7a136caafa8924349d09a84fa0603e6bd255e861eb718726ca23b6fa32ec4e78d2797a2ea3ef8\n");
         deepAr.initialize(this.getContext(), this);
         setupDeepAR();
 
@@ -86,9 +89,9 @@ public class RNTDeepAR extends FrameLayout implements AREventListener, SurfaceHo
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-//        deepAr.setAREventListener(null);
-//        deepAr.release();
-//        deepAr = null;
+        deepAr.setAREventListener(null);
+        deepAr.release();
+        deepAr = null;
     }
 
 
@@ -207,7 +210,12 @@ public class RNTDeepAR extends FrameLayout implements AREventListener, SurfaceHo
             effect = "file:///android_asset/effects/" + effectName;
             deepAr.switchEffect(slot, effect);
         } else {
-            deepAr.switchEffect(slot, null, 0);
+            try {
+                deepAr.switchEffect(slot, (InputStream) null, 0);
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -347,7 +355,11 @@ public class RNTDeepAR extends FrameLayout implements AREventListener, SurfaceHo
     }
 
     @Override
-    public void error(String s) {
+    public void frameAvailable(Image image) {
+    }
+
+    @Override
+    public void error(ARErrorType arErrorType, String s) {
 
     }
 

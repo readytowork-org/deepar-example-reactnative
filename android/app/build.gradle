@@ -128,7 +128,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "ai.deepar.rnexample"
+        applicationId "com.deepar.rnexample"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -179,12 +179,10 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation fileTree(dir: "libs", include: ["*.jar", "*.aar"])
     implementation "com.facebook.react:react-native:+"  // From node_modules
     implementation 'androidx.appcompat:appcompat:1.1.0-rc01'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha02'
-
-    implementation project(':deepar')
 
     if (enableHermes) {
         def hermesPath = "../../node_modules/hermes-engine/android/";
